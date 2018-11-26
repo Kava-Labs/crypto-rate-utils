@@ -128,6 +128,11 @@ export const connectCoinCap = async (): Promise<RateApi> => {
   // Build the exported/public interface
   return {
     async getPrice(symbol: string) {
+      // Must be hardcoded, since every pair's price is denominated in USD
+      if (symbol === 'USD') {
+        return new BigNumber(1)
+      }
+
       const asset = getAsset(symbol)
       if (!asset) {
         throw new Error('asset not available via the CoinCap API')
