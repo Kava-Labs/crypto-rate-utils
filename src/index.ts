@@ -12,7 +12,8 @@ interface RateApi {
 enum AssetCode {
   Btc = 'BTC',
   Eth = 'ETH',
-  Xrp = 'XRP'
+  Xrp = 'XRP',
+  Usd = 'USD'
 }
 
 interface AssetUnit {
@@ -75,6 +76,16 @@ const btcAsset: CreateAssetUnit = unit => amount => ({
 
 const btc = btcAsset(8)
 const satoshi = btcAsset(0)
+
+const usdAsset: CreateAssetUnit = unit => amount => ({
+  unit,
+  exchangeUnit: 2,
+  pluginBase: 0,
+  symbol: AssetCode.Usd,
+  amount: new BigNumber(amount || 1)
+})
+
+const usd = usdAsset(2)
 
 /**
  * Determine quantity of destination asset given 1 unit of source asset, in given units
@@ -143,5 +154,7 @@ export {
   // Creating XRP units
   xrp,
   drop,
-  xrpBase
+  xrpBase,
+  // Creating USD units
+  usd
 }
