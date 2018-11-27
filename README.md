@@ -2,6 +2,12 @@
 
 > Fetch exchange rates for conversions between crypto assets
 
+### Install
+
+```shell
+npm install @kava-labs/crypto-rate-utils
+```
+
 ### Usage
 
 ```js
