@@ -37,8 +37,8 @@ const fetchAssets = (assets: CoinCapAsset[] = []): Promise<CoinCapAsset[]> =>
         symbol,
         price: new BigNumber(priceUsd),
         updated: Math.min(Date.now(), data.timestamp),
-        subscribe: assets.some(asset =>
-          asset.symbol === symbol && asset.subscribe
+        subscribe: assets.some(
+          asset => asset.symbol === symbol && asset.subscribe
         )
       }))
     )
