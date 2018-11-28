@@ -30,7 +30,7 @@
   "homepage": "https://github.com/Kava-Labs/crypto-rate-utils#readme",
   "dependencies": {
     "axios": "^0.18.0",
-    "bignumber.js": "^8.0.1",
+    "bignumber.js": "^7.2.1",
     "socket.io-client": "^2.1.1",
     "ws": "^6.1.0"
   },
