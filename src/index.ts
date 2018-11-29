@@ -148,6 +148,7 @@ export {
   RateApi,
   // Utilities for rates and converting units
   convert,
+  AssetUnit,
   // Creating BTC units
   btc,
   satoshi,
