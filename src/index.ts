@@ -107,6 +107,10 @@ const getRate = async (
       api.getPrice(dest.symbol)
     ])
     rate = sourcePrice.div(destPrice)
+  } else {
+    throw new Error(
+      'API instance is required for non- like-kind conversions (e.g. BTC to ETH)'
+    )
   }
 
   // Since the rate is in the unit of exchange (e.g. BTC, ETH),
