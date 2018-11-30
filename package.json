@@ -1,6 +1,6 @@
 {
   "name": "@kava-labs/crypto-rate-utils",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Fetch exchange rates for conversions between crypto assets",
   "main": "build/index.js",
   "types": "build/index.d.ts",
