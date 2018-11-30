@@ -58,7 +58,7 @@ const MAX_PRICE_AGE = 30000
 
 export const connectCoinCap = async (): Promise<RateApi> => {
   // Initial state
-  let assets: CoinCapAsset[]
+  let assets: CoinCapAsset[] = []
   let socket: WebSocket
 
   // Getters
