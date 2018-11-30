@@ -2,7 +2,7 @@ import { connectCoinCap } from './api/coincap'
 import BigNumber from 'bignumber.js'
 
 interface RateApi {
-  getPrice: (symbol: string) => Promise<BigNumber>
+  getPrice: (symbol: string) => BigNumber
   disconnect: () => Promise<void>
 }
 
@@ -93,11 +93,11 @@ const usd = usdAsset(2)
  * @param dest Destination asset and its unit (amount disregarded)
  * @param api Backend to fetch prices
  */
-const getRate = async (
+const getRate = (
   source: AssetUnit,
   dest: AssetUnit,
   api?: RateApi
-): Promise<BigNumber> => {
+): BigNumber => {
   let rate = new BigNumber(1)
 
   // Only fetch the price if the assets are different -- otherwise rate is 1!
@@ -108,10 +108,8 @@ const getRate = async (
       )
     }
 
-    const [sourcePrice, destPrice] = await Promise.all([
-      api.getPrice(source.symbol),
-      api.getPrice(dest.symbol)
-    ])
+    const sourcePrice = api.getPrice(source.symbol)
+    const destPrice = api.getPrice(dest.symbol)
     rate = sourcePrice.div(destPrice)
   }
 
@@ -128,14 +126,18 @@ const getRate = async (
  * - Backend must be provided to convert between different types of assets
  * @param source Source assest, its amount, and its unit
  * @param dest Destination asset and its unit (amount disregarded)
- * @param api Backend to fetch prices
+ * @param apiOrRate Backend to fetch prices, or an exchange rate
  */
-const convert = async (
+const convert = (
   source: AssetUnit,
   dest: AssetUnit,
-  api?: RateApi
-): Promise<BigNumber> => {
-  const rate = await getRate(source, dest, api)
+  apiOrRate?: RateApi | BigNumber
+): BigNumber => {
+  const isBigNumber = (o: any): o is BigNumber => BigNumber.isBigNumber(o)
+  const rate = isBigNumber(apiOrRate)
+    ? apiOrRate
+    : getRate(source, dest, apiOrRate)
+
   return (
     source.amount
       .times(rate)

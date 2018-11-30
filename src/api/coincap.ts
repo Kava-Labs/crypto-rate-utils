@@ -1,9 +1,9 @@
 import axios from 'axios'
 import BigNumber from 'bignumber.js'
 import WebSocket from 'ws'
-import { RateApi } from '../'
+import { RateApi } from '..'
 
-// Schema for the internal data
+// Schema and data validation
 
 interface CoinCapAssetsResponse {
   data: Array<{
@@ -26,23 +26,6 @@ interface CoinCapAsset {
   subscribe: boolean
 }
 
-// Utility functions to fetch and parse data
-
-const fetchAssets = (assets: CoinCapAsset[] = []): Promise<CoinCapAsset[]> =>
-  axios
-    .get<CoinCapAssetsResponse>('https://api.coincap.io/v2/assets')
-    .then(({ data }) =>
-      data.data.map(({ symbol, id, priceUsd }) => ({
-        id,
-        symbol,
-        price: new BigNumber(priceUsd),
-        updated: Math.min(Date.now(), data.timestamp),
-        subscribe: assets.some(
-          asset => asset.symbol === symbol && asset.subscribe
-        )
-      }))
-    )
-
 const parseJson = (data: WebSocket.Data): any => {
   try {
     return JSON.parse(data.toString())
@@ -51,7 +34,10 @@ const parseJson = (data: WebSocket.Data): any => {
   }
 }
 
-const isValid = (o: any, assets: CoinCapAsset[]): o is CoinCapPriceResponse =>
+const isValidPriceResponse = (
+  o: any,
+  assets: CoinCapAsset[]
+): o is CoinCapPriceResponse =>
   typeof o === 'object' &&
   // Every key should be a known asset id (e.g. 'bitcoin', 'ethereum')
   Object.keys(o).every(id => assets.some(asset => asset.id === id)) &&
@@ -65,9 +51,14 @@ const isValid = (o: any, assets: CoinCapAsset[]): o is CoinCapPriceResponse =>
 
 // Factory function to connect and construct the API
 
+/** Delay (ms) between polling requests for prices and ids from all assets */
+const POLLING_REFRESH_INTERVAL = 20000
+/** Maximum amount of time (ms) before a price is invalidated since it's too old */
+const MAX_PRICE_AGE = 30000
+
 export const connectCoinCap = async (): Promise<RateApi> => {
   // Initial state
-  let assets: CoinCapAsset[] = await fetchAssets()
+  let assets: CoinCapAsset[]
   let socket: WebSocket
 
   // Getters
@@ -91,8 +82,31 @@ export const connectCoinCap = async (): Promise<RateApi> => {
         updated: Date.now()
       })
     }))
+  const updateAssets = (data: CoinCapAssetsResponse): CoinCapAsset[] =>
+    data.data.map(({ symbol, id, priceUsd }) => {
+      // Get the old version of the asset
+      const asset = assets.find(a => a.symbol === symbol)
+
+      // If the old price is more up-to-date, stick with that and don't update it
+      return asset && asset.updated > data.timestamp
+        ? asset
+        : {
+            id,
+            symbol,
+            price: new BigNumber(priceUsd),
+            updated: Math.min(Date.now(), data.timestamp),
+            // Assets that we're subscripted to should stay subscribed
+            subscribe: !!asset && asset.subscribe
+          }
+    })
 
   // Actions (side effects)
+  const fetchAssets = () =>
+    axios
+      .get<CoinCapAssetsResponse>('https://api.coincap.io/v2/assets')
+      .then(({ data }) => {
+        assets = updateAssets(data)
+      })
   const resubscribe = () => {
     if (socket) {
       socket.close()
@@ -115,7 +129,7 @@ export const connectCoinCap = async (): Promise<RateApi> => {
     socket.on('message', message => {
       // Validate the schema of the data
       const data = parseJson(message)
-      if (!isValid(data, assets)) {
+      if (!isValidPriceResponse(data, assets)) {
         throw new Error(
           'failed to update prices: invalid response from CoinCap API'
         )
@@ -125,9 +139,15 @@ export const connectCoinCap = async (): Promise<RateApi> => {
     })
   }
 
+  // Start interval to update all assets at regular interval
+  const refresh = setInterval(fetchAssets, POLLING_REFRESH_INTERVAL)
+
+  // Initially fetch assets
+  await fetchAssets()
+
   // Build the exported/public interface
   return {
-    async getPrice(symbol: string) {
+    getPrice(symbol: string) {
       // Must be hardcoded, since every pair's price is denominated in USD
       if (symbol === 'USD') {
         return new BigNumber(1)
@@ -138,24 +158,18 @@ export const connectCoinCap = async (): Promise<RateApi> => {
         throw new Error('asset not available via the CoinCap API')
       }
 
-      // If we're not getting updates for the price of that asset, subscribe to it
-      if (!asset.subscribe) {
-        assets = subscribeTo(symbol)
-        resubscribe()
-      }
-
-      // If asset data is outdated, fetch using the REST API
-      if (Date.now() > asset.updated + 25000) {
-        assets = await fetchAssets(assets)
-      }
-
-      const { updated, price } = getAsset(symbol) || asset
-
-      const outdatedPrice = Date.now() > updated + 30000
+      const { updated, subscribe, price } = asset
+      const outdatedPrice = Date.now() > updated + MAX_PRICE_AGE
       if (outdatedPrice) {
         throw new Error(
           `asset price hasn't been updated within the last 30 seconds`
         )
+      }
+
+      // If we're not getting updates for the price of that asset, subscribe to it
+      if (!subscribe) {
+        assets = subscribeTo(symbol)
+        resubscribe()
       }
 
       return price
@@ -165,6 +179,8 @@ export const connectCoinCap = async (): Promise<RateApi> => {
         socket.removeAllListeners()
         socket.close()
       }
+
+      clearInterval(refresh)
     }
   }
 }
