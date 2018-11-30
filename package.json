@@ -13,7 +13,7 @@
   "scripts": {
     "build": "tsc",
     "lint": "tslint --project .",
-    "format": "prettier '**/*.{js,ts,json,prettierrc}' --ignore-path .gitignore",
+    "format": "prettier '**/*.{js,ts,json}' --ignore-path .gitignore",
     "format:check": "npm run format -- --list-different",
     "check": "run-s lint format:check",
     "fix": "run-s 'lint -- --fix' 'format -- --write'"

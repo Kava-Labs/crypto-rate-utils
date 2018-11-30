@@ -98,19 +98,21 @@ const getRate = async (
   dest: AssetUnit,
   api?: RateApi
 ): Promise<BigNumber> => {
-  // If it's the same asset, no reason to fetch the price!
   let rate = new BigNumber(1)
 
-  if (api && source.symbol !== dest.symbol) {
+  // Only fetch the price if the assets are different -- otherwise rate is 1!
+  if (source.symbol !== dest.symbol) {
+    if (!api) {
+      throw new Error(
+        'API instance is required for non- like-kind conversions (e.g. BTC to ETH)'
+      )
+    }
+
     const [sourcePrice, destPrice] = await Promise.all([
       api.getPrice(source.symbol),
       api.getPrice(dest.symbol)
     ])
     rate = sourcePrice.div(destPrice)
-  } else {
-    throw new Error(
-      'API instance is required for non- like-kind conversions (e.g. BTC to ETH)'
-    )
   }
 
   // Since the rate is in the unit of exchange (e.g. BTC, ETH),
