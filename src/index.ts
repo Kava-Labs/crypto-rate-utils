@@ -142,7 +142,10 @@ const convert = (
     source.amount
       .times(rate)
       // Limit the precision based on the scale of the base unit
-      .decimalPlaces(dest.unit - dest.pluginBase, BigNumber.ROUND_DOWN)
+      .decimalPlaces(
+        Math.max(dest.unit - dest.pluginBase, 0), // Prevent "out of range" error when going from big units to small ones
+        BigNumber.ROUND_DOWN
+      )
   )
 }
 
