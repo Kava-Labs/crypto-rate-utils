@@ -23,7 +23,7 @@
     "url": "git+https://github.com/Kava-Labs/crypto-rate-utils.git"
   },
   "author": "Kincaid O'Neil <kincaid@kava.io> (https://kincaidoneil.com/)",
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/Kava-Labs/crypto-rate-utils/issues"
   },
