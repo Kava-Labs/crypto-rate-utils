@@ -107,6 +107,7 @@ export const connectCoinCap = async (): Promise<RateApi> => {
       .then(({ data }) => {
         assets = updateAssets(data)
       })
+      .catch(() => Promise.resolve())
   const resubscribe = () => {
     if (socket) {
       socket.close()
