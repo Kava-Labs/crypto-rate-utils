@@ -27,12 +27,6 @@ interface AssetUnit {
   /** Amount of the asset (positive), or 1 to functionally get the rate */
   amount: BigNumber
   /**
-   * Scale used in the Interledger plugin, relative to the base unit of the ledger
-   * (e.g. -3 for XRP, as the base unit used the XRP plugin is 3 orders of
-   * magnitude smaller than a drop of XRP)
-   */
-  pluginBase: number
-  /**
    * Scale of the unit of exchange, relative to the base unit of the ledger
    * (e.g. Bitcoin, the unit of exchange, is 8 orders or magnitude larger
    * than a satoshi, the smallest denomination)
@@ -56,7 +50,6 @@ const wei = ethAsset(0)
 
 const xrpAsset: CreateAssetUnit = unit => amount => ({
   unit,
-  pluginBase: -3,
   exchangeUnit: 6,
   symbol: AssetCode.Xrp,
   amount: new BigNumber(amount || 1)
@@ -69,7 +62,6 @@ const xrpBase = xrpAsset(-3)
 const btcAsset: CreateAssetUnit = unit => amount => ({
   unit,
   exchangeUnit: 8,
-  pluginBase: 0,
   symbol: AssetCode.Btc,
   amount: new BigNumber(amount || 1)
 })
@@ -80,7 +72,6 @@ const satoshi = btcAsset(0)
 const usdAsset: CreateAssetUnit = unit => amount => ({
   unit,
   exchangeUnit: 2,
-  pluginBase: 0,
   symbol: AssetCode.Usd,
   amount: new BigNumber(amount || 1)
 })
@@ -138,15 +129,7 @@ const convert = (
     ? apiOrRate
     : getRate(source, dest, apiOrRate)
 
-  return (
-    source.amount
-      .times(rate)
-      // Limit the precision based on the scale of the base unit
-      .decimalPlaces(
-        Math.max(dest.unit - dest.pluginBase, 0), // Prevent "out of range" error when going from big units to small ones
-        BigNumber.ROUND_DOWN
-      )
-  )
+  return source.amount.times(rate)
 }
 
 export {
