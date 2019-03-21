@@ -2,6 +2,9 @@ import axios from 'axios'
 import BigNumber from 'bignumber.js'
 import WebSocket from 'ws'
 import { RateApi } from '..'
+import debug from 'debug'
+
+const log = debug('crypto-rate-utils:coincap')
 
 // Schema and data validation
 
@@ -168,9 +171,13 @@ export const connectCoinCap = async (): Promise<RateApi> => {
       }
 
       // If we're not getting updates for the price of that asset, subscribe to it
-      if (!subscribe) {
-        assets = subscribeTo(symbol)
-        resubscribe()
+      try {
+        if (!subscribe) {
+          assets = subscribeTo(symbol)
+          resubscribe()
+        }
+      } catch (err) {
+        log('Failed to subscribe to CoinCap WebSocket API:', err)
       }
 
       return price
