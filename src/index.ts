@@ -135,7 +135,7 @@ export const convert = (
  * @param dest Destination asset and its unit (amount disregarded)
  * @param api Backend to fetch prices
  */
-const getRate = (
+export const getRate = (
   source: AssetUnit,
   dest: AssetUnit,
   api?: RateApi
